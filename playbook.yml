@@ -1,0 +1,45 @@
+---
+- hosts: ssh-server
+  remote_user: root
+  tasks:
+  - name: Install nginx web server
+    apt: name=nginx state=latest update_cache=yes
+
+  - name: Start Nginx Servers
+    shell: service nginx start
+
+  - name: Install git
+    apt: name=git state=latest
+
+  - name: Install node.js and npm
+    apt: name=nodejs state=latest
+
+  - name: Clone repository
+    git: 
+      repo: https://git.mrzee.fr/student/my-node-project.git
+      dest: /var/www/my-node-project
+
+  - name: As npm isn't recognized by just installing nodejs we install curl
+    apt: name=curl state=latest
+
+  - name: Install node repository via curl to access npm
+    shell: curl -sL https://deb.nodesource.com/setup_6.x | sh
+
+  - name: Install pm2
+    npm: 
+      name: pm2 
+      global: yes 
+      state: latest
+
+  - name: Install project's dependencies
+    npm: 
+      path: /var/www/my-node-project/myapp
+
+  - name: Run previously installed application via pm2
+    shell: pm2 start /var/www/my-node-project/myapp/bin/www
+
+  - name: Copy repository's vhost file
+    shell: cp /var/www/my-node-project/vhost /etc/nginx/sites-enabled/default
+
+  - name: Restart nginx
+    shell: service nginx restart
